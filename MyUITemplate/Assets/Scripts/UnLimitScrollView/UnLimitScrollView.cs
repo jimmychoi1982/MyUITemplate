@@ -51,6 +51,8 @@ public class UnLimitScrollView : MonoBehaviour, IBeginDragHandler, IDragHandler,
     private bool onMove = false; // Scroll View正在滑动中的Flag
     private bool onDrag = false; // 正在滑动的Flag
 
+	private bool onMoveDrag = false; // 正在滑动时Drag
+
     /// <summary>
     /// 滑动方向
     /// </summary>
@@ -244,6 +246,21 @@ public class UnLimitScrollView : MonoBehaviour, IBeginDragHandler, IDragHandler,
         }
     }
 
+	/// <summary>
+	/// 移動中Dragする時、スクロールビューがスクロールできないように
+	/// </summary>
+	private void FixedUpdate()
+	{
+		if (onMoveDrag == false)
+		{
+			myScrollRect.enabled = true;
+		}
+		else
+		{
+			myScrollRect.enabled = false;
+		}
+	}
+
     #region 判定event
     /// <summary>
     /// 开始滑动的判定
@@ -253,8 +270,12 @@ public class UnLimitScrollView : MonoBehaviour, IBeginDragHandler, IDragHandler,
     {
         onDrag = true;
 
-        if (this.onMove)
-            return;
+		if (this.onMove) {
+		
+			onDrag = false;
+			onMoveDrag = true;
+			return;
+		}
 
         onBeginDragPostion = eventData.position;
     }
@@ -273,29 +294,25 @@ public class UnLimitScrollView : MonoBehaviour, IBeginDragHandler, IDragHandler,
     /// <param name="eventData"></param>
     public void OnEndDrag(PointerEventData eventData)
     {
-        if (this.onMove)
-            return;
+		if (onDrag) {
+			Vector3 onEndDragtouchPos = eventData.position;
 
-        Vector3 onEndDragtouchPos = eventData.position;
+			var distance = onBeginDragPostion.x + onEndDragtouchPos.x;
+			distance = distance > 0 ? distance : -distance;
 
-        var distance = onBeginDragPostion.x + onEndDragtouchPos.x;
-        distance = distance > 0 ? distance : -distance;
+			if (distance >= CanSwipeDistance) {
+				Debug.Log ("Will Swipe");
 
-        if (distance >= CanSwipeDistance)
-        {
-            Debug.Log("Will Swipe");
-
-            if (onBeginDragPostion.x > onEndDragtouchPos.x)
-            {
-                swipe(SwipeDirection.Left);
-            }
-            else
-            {
-                swipe(SwipeDirection.Right);
-            }
-        }
+				if (onBeginDragPostion.x > onEndDragtouchPos.x) {
+					swipe (SwipeDirection.Left);
+				} else {
+					swipe (SwipeDirection.Right);
+				}
+			}
+		}
 
         onDrag = false;
+		onMoveDrag = false;
     }
     #endregion
 }
